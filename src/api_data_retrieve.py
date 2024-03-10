@@ -1,4 +1,5 @@
 import mysql.connector
+import MySQLdb as mdb
 
 cnx = mysql.connector.connect(user = 'alonpolski', \
                               password = 'alon2285',\
@@ -6,5 +7,7 @@ cnx = mysql.connector.connect(user = 'alonpolski', \
                               database='alonpolski',\
                               port=3305
                             )
+
+crea
 
 cnx.close()
