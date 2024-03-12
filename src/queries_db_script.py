@@ -78,3 +78,7 @@ def query_1(show_adult, genre, start_range_year, end_range_year, start_range_run
 
     #needs to add try catch...    print!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     cur.execute(query, args)
+
+
+if __name__ == "__main__":
+  cnx.close()
