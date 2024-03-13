@@ -54,8 +54,8 @@ def insert_data(cursor: mysql.connector.cursor_cext.CMySQLCursor):
                      dtype=  {'tconst': str, 'titleType': str, 'primaryTitle': str, 'originalTitle': str, 'isAdult': str, 'startYear': str, 'endYear': str, 'runtimeMinutes': str, 'genres': str},
                      quoting= csv.QUOTE_NONE)
   add_title = (
-      "INSERT INTO title"
-      "(temp, type, name, adult, year, minutes)"
+      "INSERT INTO title "
+      "(temp, type, name, adult, year, minutes) "
       "VALUES(%(tconst)s, %(titleType)s, %(primaryTitle)s, %(isAdult)s, %(startYear)s, %(runtimeMinutes)s)"
   )
   temp.apply(lambda x: exec(x, add_title), axis = 1)
@@ -67,8 +67,8 @@ def insert_data(cursor: mysql.connector.cursor_cext.CMySQLCursor):
                      dtype={'tconst': str, 'averageRating': str, 'numVotes': str},
                      quoting= csv.QUOTE_NONE)
   update_title = (
-    "UPDATE title"
-    "SET ratings = %(avergeRating)s"
+    "UPDATE title "
+    "SET ratings = %(avergeRating)s "
     "WHERE temp = %(tconst)s"
   )
   temp.apply(lambda x: exec(x, update_title), axis=1)
@@ -76,9 +76,9 @@ def insert_data(cursor: mysql.connector.cursor_cext.CMySQLCursor):
   # Creating the genres table.
   temp = genres_prep
   add_genre = (
-    "INSERT INTO genre"
-    "(id, genre)"
-    "VALUES(%(id)s, %(genres)s)"
+    "INSERT INTO genre "
+    "(temp, genre) "
+    "VALUES(%(tconst)s, %(genres)s)"
   )
   temp.apply(lambda x: exec(x, add_genre))
 
@@ -86,8 +86,92 @@ def insert_data(cursor: mysql.connector.cursor_cext.CMySQLCursor):
   temp = pd.read_csv(os.path.join("data", "title.principals.csv"),
                      dtype={'tconst': str, 'ordering': str, 'nconst': str, 'category': str, 'job': str, 'characters': str})
   add_title_person = (
-    "INSERT INTO title_person"
-    "(title_id, person_id, job)"
-    "VALUES(%(tconst)s, %(ncost)s, )"
+    "INSERT INTO title_person "
+    "(temp1, temp2, job) "
+    "VALUES(%(tconst)s, %(ncost)s, %(job)s)"
   )
+  temp.apply(lambda x: exec(x, add_title_person), axis = 1)
+  
+  # Creating the person table.
+  temp = pd.read_csv(os.path.join("data", "name.basics.csv"),
+                     dtype=  {'nconst': str, 'primaryName': str, 'birthYear': str, 'deathYear': str, 'primaryProfession': str, 'knownForTitles': str},
+                     quoting= csv.QUOTE_NONE)
+  add_person = (
+      "INSERT INTO person "
+      "(temp, name) "
+      "VALUES(%(nconst)s, %(primaryName)s)"
+  )
+  temp.apply(lambda x: exec(x, add_person), axis = 1)
+
+  # Creating the profession table.
+  profession_prep = create_df(temp, "nconst", "primaryProfession") 
+  temp = profession_prep
+  add_profession = (
+    "INSERT INTO profession "
+    "(temp, profession) "
+    "VALUES(%(nconst)s, %(primaryProfession)s)"
+  )
+  temp.apply(lambda x: exec(x, add_profession))
+
+
+  FIX_TABLES = {}
+  FIX_TABLES['genre_update'] = (
+      "UPDATE genre "
+      "SET id = ( SELECT title.id "
+                "FROM title "
+                "WHERE genre.temp = title.temp )"
+  )
+  FIX_TABLES['genre_alter'] = (
+      "ALTER TABLE genre "
+      "ADD PRIMARY KEY (id, genre),"
+      "ADD FOREIGN KEY (id) REFERENCES person(id),"
+      "DROP COLUMN temp"
+  )
+  FIX_TABLES['title_person_update'] = (
+      "UPDATE title_person "
+      "SET title_id = ( SELECT title.id "
+                      "FROM title "
+                      "WHERE title_person.temp1 = title.temp ),"
+      "SET person_id = ( SELECT person.id "
+                      "FROM person "
+                      "WHERE title_person.temp2 = person.id )"
+  )
+  FIX_TABLES['title_person_alter'] = (
+      "ALTER TABLE title_person "
+      "ADD PRIMARY KEY (title_id, person_id, job),"
+      "ADD FOREIGN KEY (title_id) REFERENCES title(id),"
+      "ADD FOREIGN KEY (person_id) REFERENCES person(id),"
+      "DROP COLUMN temp1,"
+      "DROP COLUMN temp2"
+  )
+  FIX_TABLES['profession_update'] = (
+      "UPDATE profession "
+      "SET id = ( SELECT person.id "
+                "FROM person "
+                "WHERE profession.temp = person.temp )"
+  )
+  FIX_TABLES['profession_alter'] = (
+      "ALTER TABLE profession "
+      "ADD PRIMARY KEY (id, profession),"
+      "ADD FOREIGN KEY (id) REFERENCES person(id),"
+      "DROP COLUMN temp"
+  )
+  FIX_TABLES['title_alter'] = (
+      "ALTER TABLE title "
+      "DROP COLUMN temp,"
+      "DROP COLUMN type,"
+      "DROP COLUMN adult"
+  )
+  FIX_TABLES['person_alter'] = (
+      "ALTER TABLE person "
+      "DROP COLUMN temp"
+  )
+
+  for fix in FIX_TABLES:
+        table_description = FIX_TABLES[fix]
+        try:
+            cursor.execute(table_description)
+        except mysql.connector.Error as err:
+            print(err.msg)
+            print(fix)
 
