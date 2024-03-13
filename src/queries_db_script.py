@@ -80,7 +80,6 @@ def query_1(name, show_adult, genre, start_range_year, end_range_year, start_ran
     #needs to add try catch?...    print!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     cur.execute(query, args)
 
-
 #search by person name: show the movies and the job of the person in the movie
 #can filter by adult movies
 def query_2(name, show_adult)
