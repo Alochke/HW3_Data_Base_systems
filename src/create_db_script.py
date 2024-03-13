@@ -25,6 +25,7 @@ def create_tables(cursor: mysql.connector.cursor_cext.CMySQLCursor):
         f"minutes SMALLINT({MAX_MINUTES_LEN}) UNSIGNED NOT NULL,"
         "ratings FLOAT(2) DEFAULT 0 NOT NULL,"
         "PRIMARY KEY (id),"
+        "CONSTRAINT adult_check CHECK (adult = 0)"
         "CONSTRAINT type_check CHECK (type LIKE 'movie')"
         ") ENGINE=InnoDB"
     )
@@ -38,7 +39,7 @@ def create_tables(cursor: mysql.connector.cursor_cext.CMySQLCursor):
     )
     TABLES['title_person'] = (
         "CREATE TABLE title_person("
-        f"film_id MEDIUMINT({TITLE_ID_LEN}) UNSIGNED NOT NULL DEFAULT 0,"
+        f"title_id MEDIUMINT({TITLE_ID_LEN}) UNSIGNED NOT NULL DEFAULT 0,"
         f"person_id MEDIUMINT({PERSON_ID_LEN}) UNSIGNED NOT NULL DEFAULT 0,"
         f"temp1 char({TCONST_LEN}) NOT NULL,"
         f"temp2 char({NCONST_LEN}) NOT NULL,"
@@ -48,19 +49,19 @@ def create_tables(cursor: mysql.connector.cursor_cext.CMySQLCursor):
     )
     TABLES['person'] = (
         "CREATE TABLE person("
-        f"person_id MEDIUMINT({PERSON_ID_LEN}) UNSIGNED NOT NULL DEFAULT 0,"
+        f"id MEDIUMINT({PERSON_ID_LEN}) UNSIGNED NOT NULL AUTO_INCREMENT UNIQUE,"
         f"temp char({NCONST_LEN}) NOT NULL,"
         f"name varchar({MAX_PERSON_NAME_LEN}) NOT NULL,"
+        "PRIMARY KEY (id),"
         "FOREIGN KEY (temp) REFERENCES title_person(temp2)"
         ") ENGINE=InnoDB"
     )
     print(TABLES['person'])
     TABLES['profession'] = (
         "CREATE TABLE profession("
-        f"person_id MEDIUMINT({PERSON_ID_LEN}) UNSIGNED NOT NULL DEFAULT 0,"
+        f"id MEDIUMINT({PERSON_ID_LEN}) UNSIGNED NOT NULL DEFAULT 0,"
         f"temp char({NCONST_LEN}) NOT NULL,"
         f"profession varchar({MAX_PROFESSION_LEN}) NOT NULL,"
-        "PRIMARY KEY (id, profession),"
         "FOREIGN KEY (temp) REFERENCES person(temp)"
         ") ENGINE=InnoDB"
     )
