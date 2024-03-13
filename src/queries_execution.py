@@ -1,5 +1,5 @@
 import mysql.connector
-from mysql.connector import errorcode
+from create_db_script import create_tables
 
 cnx = mysql.connector.connect(user = 'alonpolski', \
                               password = 'alon2285',\
@@ -11,5 +11,6 @@ cnx = mysql.connector.connect(user = 'alonpolski', \
 cursor = cnx.cursor()
 
 if __name__ == "__main__":
+  create_tables(cursor)
+  cursor.close()
   cnx.close()
-
