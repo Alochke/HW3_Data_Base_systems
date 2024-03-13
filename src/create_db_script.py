@@ -14,40 +14,42 @@ def create_tables(cursor: mysql.connector.cursor_cext.CMySQLCursor):
     TABLES = {}
     TABLES['title'] = (
         "CREATE TABLE title("
-        f"id char({MOVIE_ID_LEN}) NOT NULL,"
-        f"type char({MOVIE_LEN}) NOT NULL,"
-        f"name varchar({MAX_MOVIE_NAME_LEN}) NOT NULL,"
+        "id MEDIUMINT(6) UNSIGNED NOT NULL AUTO_INCREMMENT UNIQUE"
+        f"temp CHAR({MOVIE_ID_LEN}) NOT NULL UNIQUE,"
+        f"type CHAR({MOVIE_LEN}) NOT NULL,"
+        f"name VARCHAR({MAX_MOVIE_NAME_LEN}) NOT NULL,"
         "adult BOOL NOT NULL,"
         "year YEAR NOT NULL,"
         f"minutes SMALLINT({MAX_MINUTES_LEN}) UNSIGNED NOT NULL,"
-        "ratings FLOAT(2) NOT NULL,"
+        "ratings FLOAT(2) DEFAULT 0 NOT NULL,"
         "PRIMARY KEY (id),"
         "CONSTRAINT type_check CHECK (type LIKE 'movie')"
         ") ENGINE=InnoDB"
     )
     TABLES['genre'] = (
         "CREATE TABLE genre("
-        f"id char({MOVIE_ID_LEN}) NOT NULL,"
+        f""
+        f"temp char({MOVIE_ID_LEN}) NOT NULL,"
         f"genre varchar({MAX_GENRE_LEN}) NOT NULL,"
         "PRIMARY KEY (id, genre),"
-        "FOREIGN KEY (id) REFERENCES title(id)"
+        "FOREIGN KEY (temp) REFERENCES title(temp)"
         ") ENGINE=InnoDB"
     )
     TABLES['title_person'] = (
         "CREATE TABLE title_person("
-        f"title_id char({MOVIE_ID_LEN}) NOT NULL,"
-        f"person_id char({PERSON_ID_LEN}) NOT NULL,"
+        f"temp1 char({MOVIE_ID_LEN}) NOT NULL,"
+        f"temp2 char({PERSON_ID_LEN}) NOT NULL,"
         f"job varchar({MAX_JOB_LEN}) NOT NULL,"
-        "PRIMARY KEY (title_id, person_id, job),"
-        "FOREIGN KEY (title_id) REFERENCES title(id)"
+        "PRIMARY KEY (temp1, temp2, job),"
+        "FOREIGN KEY (temp1) REFERENCES title(temp)"
         ") ENGINE=InnoDB"
     )
     TABLES['person'] = (
         "CREATE TABLE person("
-        f"id char({PERSON_ID_LEN}) NOT NULL,"
+        f"temp char({PERSON_ID_LEN}) NOT NULL,"
         f"name varchar({MAX_PERSON_NAME_LEN}) NOT NULL,"
-        "FOREIGN KEY (id) REFERENCES title_person(person_id),"
-        "PRIMARY KEY (id)"
+        "FOREIGN KEY (temp) REFERENCES title_person(temp),"
+        "PRIMARY KEY (temp1)"
         ") ENGINE=InnoDB"
     )
     TABLES['profession'] = (

@@ -2,91 +2,92 @@ import queries_execution as qe
 import pandas as pd
 import csv
 import create_db_script as cdbs
+import os
+import mysql
 
-def create_genre() -> pd.DataFrame:
+def create_df(base: pd.DataFrame, id: str, array: str) -> pd.DataFrame:
     """
-    Creates a dataframe that represents the genres of movies.
-    
-    Returns:
-    A pd.DataFrame. DataFrame containing relevant information from data/title.basics.csv.
-        The dataframe has two columns, id, a unique identifier of a title and genre, the genre of the title.
+    This function serves as a refactorization of the process of parsing the primaryProffession column of data/name.basics.csv
+    and the genres column of data/title.basics.csv for the creation of the profession table and the genre table, respectively,
+    in the db.
+    In some rows, those columns in the original dataset have a banch of values stored together in the same column,
+    this function seprates the values.
 
-    Note:
-    - This function assumes the existence of 'data' directory in the current working directory, containing the used csvs.
+    Parameters:
+      base (pd.DataFrame): A dataframe that is simply the csv the data is parsed from.
+      id (str): The name of the column in the original database that has the ID of the rows.
+      array (str): The name of the column in the original database that has multiple data in some rows.
+
+    
+    Returns (pd.DataFrame):
+      A dataframe that has the data parsed, it will have two columns, one containts the id of the row the data was parsed from and its ids,
+      the other has the seprated data that was compressed into one cell.
+      Each of the columns will be named as the column it was taken from.
 
     Example:
-    genre = create_genre()
+
     """
-    titles = pd.read_csv(os.path.join("data", "title.basics.csv"),
-                            dtype=  {'tconst': str, 'titleType': str, 'primaryTitle': str, 'originalTitle': str, 'isAdult': int, 'startYear': str, 'endYear': str, 'runtimeMinutes': str, 'genres': str},
-                            quoting= csv.QUOTE_NONE)
 
-
-    # Initialize lists to store ids and genres
     ids = []
-    genres = []
+    subs = []
 
-    # Define a function to add genres for each row in the DataFrame
-    def add_genre(x: pd.core.series.Series):
-        for genre in x['genres'].split():
-            ids.append(x['tconst'])
-            genres.append(genre) # The dataset uses "_" to notate spaces within professions.
+    # Define a function to preform on each row in base.
+    def parse(x: pd.core.series.Series):
+        for sub in x[array].split():
+            ids.append(x[id])
+            subs.append(array.replace('_', ' ')) # The dataset uses "_" to notate spaces within array's components.
 
-    # Apply the add_genre function to each row of the DataFrame
-    titles.apply(add_genre, axis=1)
+    # Apply the parse function to each row of the DataFrame.
+    base.apply(parse, axis=1)
 
-    return pd.DataFrame({"id": ids, "genre": genres})
+    return pd.DataFrame({id: ids, array: subs})
 
-def create_proffession() -> pd.DataFrame:
-    """
-    Creates a data frame equivalent of the proffession table.
-    
-    Returns:
-    A pd.DataFrame. DataFrame containing relevant information from data/name.basics.csv,
-        The dataframe has two columns, id, a unique identifier of a person and profession, one of the professions of a person.
+def insert_data(cursor: mysql.connector.cursor_cext.CMySQLCursor):
+  
+  # This function executes the given sql command on the db, and it fills it correctly based on values from x, a df row.
+  # We'll use it when going over the rows of a df and execute sql commands that are based on the rows.
+  def exec(x: pd.core.series.Series, sql_str: str):
+     cursor.execute(sql_str, x)
+          
+  # Creating the title table.
+  temp = pd.read_csv(os.path.join("data", "title.basics.csv"),
+                     dtype=  {'tconst': str, 'titleType': str, 'primaryTitle': str, 'originalTitle': str, 'isAdult': str, 'startYear': str, 'endYear': str, 'runtimeMinutes': str, 'genres': str},
+                     quoting= csv.QUOTE_NONE)
+  add_title = (
+      "INSERT INTO title"
+      "(temp, type, name, adult, year, minutes)"
+      "VALUES(%(tconst)s, %(titleType)s, %(primaryTitle)s, %(isAdult)s, %(startYear)s, %(runtimeMinutes)s)"
+  )
+  temp.apply(lambda x: exec(x, add_title), axis = 1)
+  # I intentionally prepare the df I need for the genres column beforehand, 
+  # because I don't want to call pd.read_csv more times than necessary, it's a heavy operation
+  # and I also don't want to keep a variable pointing to temp, to free up memory. 
+  genres_prep = create_df(temp, "tconst", "genres") 
+  temp = pd.read_csv(os.path.join("data", "title.ratings.csv"), 
+                     dtype={'tconst': str, 'averageRating': str, 'numVotes': str},
+                     quoting= csv.QUOTE_NONE)
+  update_title = (
+    "UPDATE title"
+    "SET ratings = %(avergeRating)s"
+    "WHERE temp = %(tconst)s"
+  )
+  temp.apply(lambda x: exec(x, update_title), axis=1)
 
-    Note:
-    - This function assumes the existence of 'data' directory in the current working directory, containing the used csvs.
+  # Creating the genres table.
+  temp = genres_prep
+  add_genre = (
+    "INSERT INTO genre"
+    "(id, genre)"
+    "VALUES(%(id)s, %(genres)s)"
+  )
+  temp.apply(lambda x: exec(x, add_genre))
 
-    Example:
-    genre = create_genre()
-    """
-    names = pd.read_csv(os.path.join("data", "name.basics.csv"),
-                        dtype={'nconst': str, 'primaryName': str, 'birthYear': str, 'deathYear': str, 'primaryProfession': str, 'knownForTitles': str}, 
-                        quoting = csv.QUOTE_NONE)
+  # Creating the title_person table.
+  temp = pd.read_csv(os.path.join("data", "title.principals.csv"),
+                     dtype={'tconst': str, 'ordering': str, 'nconst': str, 'category': str, 'job': str, 'characters': str})
+  add_title_person = (
+    "INSERT INTO title_person"
+    "(title_id, person_id, job)"
+    "VALUES(%(tconst)s, %(ncost)s, )"
+  )
 
-    # Initialize lists to store ids and genres
-    ids = []
-    professions = []
-
-    # Define a function to add genres for each row in the DataFrame
-    def add_profession(x: pd.core.series.Series):
-        # Some rows have the type of the 'primaryProfession' column as float which will result in an error, that's because the matching csv field
-        # is empty, so we drop their data, because it's not of any significance anyways.
-        if type(x['primaryProfession']) == str:
-                for genre in x['primaryProfession'].split():
-                    ids.append(x['nconst'])
-                    professions.append(genre.replace("_", " ")) # The dataset uses "_" to notate spaces within professions.
-
-    # Apply the add_genre function to each row of the DataFrame
-    names.apply(add_profession, axis=1)
-
-    return pd.DataFrame({"id": ids, "profession": professions})
-
-def insert_tables():
-  # Prepare dfs for insertion.
-  dfs = {}
-  dfs['title'] = pd.read_csv(os.path.join("data", "title.basics.csv"),
-                            dtype={'tconst': str, 'titleType': str, 'primaryTitle': str, 'originalTitle': str, 'isAdult': str, 'startYear': str, 'endYear': str, 'runtimeMinutes': str, 'genres': str},
-                            quoting= csv.QUOTE_NONE)
-  dfs['genre'] = cdbs.create_genre()
-  dfs['person'] = pd.read_csv(os.path.join("data", "name.basics.csv"),
-                              dtype={'nconst': str, 'primaryName': str, 'birthYear': str, 'deathYear': str, 'primaryProfession': str, 'knownForTitles': str},
-                              quoting= csv.QUOTE_NONE)
-  dfs['title_person'] = pd.read_csv(os.path.join("data", "title.principals.csv"),
-                                    dtype={'tconst': str, 'ordering': str, 'nconst': str, 'category': str, 'job': str, 'characters': str},
-                                    quoting= csv.QUOTE_NONE)
-  dfs['profession'] = cdbs.create_proffession()
-
-if __name__ == "__main__":
-  qe.cnx.close()
