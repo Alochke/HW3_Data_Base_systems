@@ -1,6 +1,5 @@
 import mysql.connector
 from create_db_script import create_tables
-from mysql.connector import errorcode
 
 cnx = mysql.connector.connect(user = 'alonpolski', \
                               password = 'alon2285',\
