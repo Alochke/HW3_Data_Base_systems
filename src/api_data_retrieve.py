@@ -115,7 +115,7 @@ def insert_data(cursor: mysql.connector.cursor_cext.CMySQLCursor):
 
 
   FIX_TABLES = {}
-  TABLES['genre_update'] = (
+  FIX_TABLES['genre_update'] = (
       "UPDATE genre "
       "SET id = ( SELECT title.id "
                 "FROM title "
