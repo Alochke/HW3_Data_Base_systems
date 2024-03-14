@@ -3,13 +3,13 @@
 def query_1():
     """
     Retruns a query that gets a genre and two year numbers,
-    and returns a table that has movie ids, movie name, years, duration in minutes and average imdb ratings columns (in that order)
+    and returns a table that has movie's genre, movie ids, movie name, years, duration in minutes and average imdb ratings columns (in that order)
     that contains only the information of titles of the given genre that started the production between the given years.
     The result will be sorted by descending average rating.
     """
 
     query= (
-        "SELECT title.id, title.name, title.year, title.minutes, title.ratings "
+        "SELECT genre.genre, title.id, title.name, title.year, title.minutes, title.ratings "
         "FROM genre, title "
         "ON MATCH(genre.genre) AGAINST('%s' IN NATURAL LANGUAGE MODE) AND title.year >= %d AND title.year <= %d "
         "ORDER BY title.ratings DESC"
@@ -17,7 +17,7 @@ def query_1():
 
     return query
 
-def query_2(name):
+def query_2():
     """
     Retutns a sql string that searches by a person's name movies where the person was part of production,
     and a job type he did on this poruction.
@@ -75,7 +75,7 @@ def query_3():
 
     return query
 
-def query_4(name):
+def query_4():
     """
     Get for a person the average rating of average imdb movie ratings where the person was part of the production, by the person's name.
 
