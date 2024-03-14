@@ -103,7 +103,7 @@ def query_4(name):
 
     return query
 
-def query_5()
+def query_5():
     """
     Returns a query that gets all industry professions having amount of people working in them greater than the number given.
     """

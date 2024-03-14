@@ -1,4 +1,3 @@
-import queries_execution as qe
 import pandas as pd
 import csv
 import create_db_script as cdbs

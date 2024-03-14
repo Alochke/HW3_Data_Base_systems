@@ -13,11 +13,28 @@ TITLE_ID_LEN = 6
 PERSON_ID_LEN = 7
 
 def create_tables(cursor: mysql.connector.cursor_cext.CMySQLCursor):
-    TABLES = {}
-    TABLES['title'] = (
+    """
+    This function creates the db.
+    """
+    UPDATES = [] # This list accumulates the sql commands we'll use.
+    
+    # We add more columns than needed to all the tables, temporarly.
+    # One of the principals behind it is the fact that the original dataset already comes with ids that
+    # identify objects of interest, however all of those ids are 10 char long while 32 bits are more than
+    # enough to identify the objects the original IDs identify in our reduced data,
+    # therefore we use the original IDs only as temporaries and let the db generate new shorter keys,
+    # we need to preserve the temporaries until spreading the new IDs across all tables to preserve
+    # consistency across all tables.
+    # We also use them to filter unused data, by utilizing foreign keys.
+    # For example, the original dataset contains data about video game directors unassociated with the movie
+    # industry, we get rid of those by making a person's tempory id be a foreign key refrencing tempory IDs
+    # of persons appearing in the title_person table, we know for sure that only IDs of persons associated with
+    # the movies industry can appear there because its rows were filtered priorly by making sure the tempory
+    # title ID of those rows appear in the title table, via a foreign key constraint.
+    UPDATES.append((
         "CREATE TABLE title("
         f"id MEDIUMINT({TITLE_ID_LEN}) UNSIGNED NOT NULL AUTO_INCREMENT UNIQUE,"
-        f"temp CHAR({TCONST_LEN}) NOT NULL UNIQUE,"
+        f"temp CHAR({TCONST_LEN}) NOT NULL,"
         f"type CHAR({MOVIE_LEN}) NOT NULL,"
         f"name VARCHAR({MAX_MOVIE_NAME_LEN}) NOT NULL,"
         "adult BOOL NOT NULL,"
@@ -25,51 +42,63 @@ def create_tables(cursor: mysql.connector.cursor_cext.CMySQLCursor):
         f"minutes SMALLINT({MAX_MINUTES_LEN}) UNSIGNED NOT NULL,"
         "ratings FLOAT(2) DEFAULT 0 NOT NULL,"
         "PRIMARY KEY (id),"
-        "CONSTRAINT adult_check CHECK (adult = 0)"
-        "CONSTRAINT type_check CHECK (type LIKE 'movie')"
+        "CONSTRAINT adult_check CHECK (adult = 0)," # No sexy content sneaking into our db, naughty naughty!
+        "CONSTRAINT type_check CHECK (type LIKE 'movie')" # We want our data to be reduced to movies.
         ") ENGINE=InnoDB"
-    )
-    TABLES['genre'] = (
+    ))
+    UPDATES.append((
         "CREATE TABLE genre("
-        f"id MEDIUMINT({TITLE_ID_LEN}) UNSIGNED NOT NULL DEFAULT 0,"
-        f"temp char({TCONST_LEN}) NOT NULL,"
+        f"id MEDIUMINT({TITLE_ID_LEN}) UNSIGNED NOT NULL DEFAULT 0," # ids will be updated later.
+        f"temp char({TCONST_LEN}) NOT NULL," 
         f"genre varchar({MAX_GENRE_LEN}) NOT NULL,"
-        "FOREIGN KEY (temp) REFERENCES title(temp)"
+        "FOREIGN KEY (temp) REFERENCES title(temp)" # We limit the table to movies by this key.
         ") ENGINE=InnoDB"
-    )
-    TABLES['title_person'] = (
+    ))
+    UPDATES.append((
         "CREATE TABLE title_person("
         f"title_id MEDIUMINT({TITLE_ID_LEN}) UNSIGNED NOT NULL DEFAULT 0,"
         f"person_id MEDIUMINT({PERSON_ID_LEN}) UNSIGNED NOT NULL DEFAULT 0,"
         f"temp1 char({TCONST_LEN}) NOT NULL,"
         f"temp2 char({NCONST_LEN}) NOT NULL,"
         f"job varchar({MAX_JOB_LEN}) NOT NULL,"
-        "FOREIGN KEY (temp1) REFERENCES title(temp)"
+        "FOREIGN KEY (temp1) REFERENCES title(temp)" # We limit the data to persons from the movie industry by this key.
         ") ENGINE=InnoDB"
-    )
-    TABLES['person'] = (
+    ))
+    UPDATES.append((
+        "CREATE INDEX temp ON title_person(temp2)" # We have to add this index for the next table creation to work, we'll remove it after data insertion.
+    ))
+    UPDATES.append((
         "CREATE TABLE person("
         f"id MEDIUMINT({PERSON_ID_LEN}) UNSIGNED NOT NULL AUTO_INCREMENT UNIQUE,"
         f"temp char({NCONST_LEN}) NOT NULL,"
         f"name varchar({MAX_PERSON_NAME_LEN}) NOT NULL,"
         "PRIMARY KEY (id),"
-        "FOREIGN KEY (temp) REFERENCES title_person(temp2)"
+        "FOREIGN KEY (temp) REFERENCES title_person(temp2)" # We limit the data to persons from the movie industry by this key.
         ") ENGINE=InnoDB"
-    )
-    print(TABLES['person'])
-    TABLES['profession'] = (
+    ))
+    UPDATES.append((
         "CREATE TABLE profession("
         f"id MEDIUMINT({PERSON_ID_LEN}) UNSIGNED NOT NULL DEFAULT 0,"
         f"temp char({NCONST_LEN}) NOT NULL,"
         f"profession varchar({MAX_PROFESSION_LEN}) NOT NULL,"
-        "FOREIGN KEY (temp) REFERENCES person(temp)"
+        "FOREIGN KEY (temp) REFERENCES person(temp)" # We limit the data to persons from the movie industry by this key.
         ") ENGINE=InnoDB"
-    )
+    ))
+    UPDATES.append((
+        "CREATE INDEX title_year ON title(year) USING BTREE"
+    ))
+    UPDATES.append((
+        "ALTER TABLE title ADD FULLTEXT(name)"
+    ))
+    UPDATES.append((
+        "ALTER TABLE genre ADD FULLTEXT(genre)"
+    ))
+    UPDATES.append((
+        "ALTER TABLE person ADD FULLTEXT(name)"
+    ))
     
-    for table_name in TABLES:
-        table_description = TABLES[table_name]
+    for sql_str in UPDATES:
         try:
-            cursor.execute(table_description)
+            cursor.execute(sql_str)
         except mysql.connector.Error as err:
             print(err.msg)
-            print(table_name)
