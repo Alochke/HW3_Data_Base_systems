@@ -7,10 +7,13 @@ MAX_MOVIE_NAME_LEN = 208
 MAX_MINUTES_LEN = 5
 MAX_GENRE_LEN = 11 
 MAX_JOB_LEN = 19
-MAX_PERSON_NAME_LEN = 95
+MAX_PERSON_NAME_LEN = 95 # It may be that the max length specified here is longer than the one found in the actual db,
+# but it's true for insertion of all the rows of original dataset.
 MAX_PROFESSION_LEN = 25
 TITLE_ID_LEN = 6
 PERSON_ID_LEN = 7
+YEAR_LEN = 4
+RATING_PRECISION = 2
 
 
 
@@ -23,9 +26,9 @@ def create_tables(cursor: mysql.connector.cursor_cext.CMySQLCursor):
     # We add more columns than needed to all the tables, temporarly.
     # One of the principals behind it is the fact that the original dataset already comes with ids that
     # identify objects of interest, however all of those ids are 10 char long while 32 bits are more than
-    # enough to identify the objects the original IDs identify in our reduced data,
+    # enough to identify the objects the original IDs identify in our reduced data (even if we won't reduce each csv to 50,000 rows)
     # therefore we use the original IDs only as temporaries and let the db generate new shorter keys,
-    # we need to preserve the temporaries until spreading the new IDs across all tables to preserve
+    # we need to save the temporaries until spreading the new IDs across all tables to preserve
     # consistency across all tables.
     UPDATES.append((
         "CREATE TABLE title("
@@ -34,11 +37,10 @@ def create_tables(cursor: mysql.connector.cursor_cext.CMySQLCursor):
         f"type CHAR({MOVIE_LEN}) NOT NULL,"
         f"name VARCHAR({MAX_MOVIE_NAME_LEN}) NOT NULL,"
         "adult BOOL NOT NULL,"
-        "year SMALLINT(4) UNSIGNED NOT NULL," # We use the smallint type and not a year type because a year type has a lower bound of 1901, while there are movies that were produced before 1901.
+        "year SMALLINT({YEAR_LEN}) UNSIGNED NOT NULL," # We use the smallint type and not a year type because a year type has a lower bound of 1901, while there are movies that were produced before 1901.
         f"minutes SMALLINT({MAX_MINUTES_LEN}) UNSIGNED NOT NULL,"
-        "ratings FLOAT(2) DEFAULT 0 NOT NULL,"
+        "ratings FLOAT({RATING_PRECISION}) DEFAULT 0 NOT NULL,"
         "PRIMARY KEY (id),"
-        "CONSTRAINT year_lower CHECK (year <= 2024),"
         "CONSTRAINT adult_check CHECK (adult = 0),"
         "CONSTRAINT type_check CHECK (type LIKE 'movie')" # We want our data to be reduced to movies.
         ") ENGINE=InnoDB"
@@ -102,4 +104,3 @@ def create_tables(cursor: mysql.connector.cursor_cext.CMySQLCursor):
             cursor.execute(sql_str)
         except mysql.connector.Error as err:
             print(err.msg)
-            print(sql_str)
