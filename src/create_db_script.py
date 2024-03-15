@@ -39,7 +39,7 @@ def create_tables(cursor: mysql.connector.cursor_cext.CMySQLCursor):
         "ratings FLOAT(2) DEFAULT 0 NOT NULL,"
         "PRIMARY KEY (id),"
         "CONSTRAINT year_lower CHECK (year <= 2024),"
-        "CONSTRAINT adult_check CHECK (adult = 0)," # No sexy content sneaking into our db, naughty naughty!
+        "CONSTRAINT adult_check CHECK (adult = 0),"
         "CONSTRAINT type_check CHECK (type LIKE 'movie')" # We want our data to be reduced to movies.
         ") ENGINE=InnoDB"
     ))
