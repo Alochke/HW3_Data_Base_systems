@@ -10,8 +10,8 @@ def query_1():
 
     query= (
         "SELECT genre.genre, title.id, title.name, title.year, title.minutes, title.ratings "
-        "FROM genre, title "
-        "ON MATCH(genre.genre) AGAINST('%s' IN NATURAL LANGUAGE MODE) AND title.year >= %d AND title.year <= %d "
+        "FROM genre JOIN title "
+        "ON MATCH(genre.genre) AGAINST(%s IN NATURAL LANGUAGE MODE) AND title.year >= %s AND title.year <= %s "
         "ORDER BY title.ratings DESC"
         )
 

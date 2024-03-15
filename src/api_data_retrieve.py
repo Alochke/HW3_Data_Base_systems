@@ -31,9 +31,10 @@ def create_df(base: pd.DataFrame, id: str, array: str) -> pd.DataFrame:
 
     # Define a function to preform on each row in base.
     def parse(x: pd.core.series.Series):
-        for sub in x[array].split():
-            ids.append(x[id])
-            subs.append(sub.replace('_', ' ')) # The dataset uses "_" to notate spaces within array's components.
+        if type(x[array]) == str: # We add this check to handle \N in the data set (and to not insert them into the db.).
+          for sub in x[array].split():
+              ids.append(x[id])
+              subs.append(sub.replace('_', ' ')) # The dataset uses "_" to notate spaces within array's components.
 
     # Apply the parse function to each row of the DataFrame.
     base.apply(parse, axis=1)
@@ -53,7 +54,9 @@ def insert_data(cursor: mysql.connector.cursor_cext.CMySQLCursor):
     # Creating the title table.
     temp = pd.read_csv(os.path.join("..", "data", "title.basics.csv"),
                       dtype=  {'tconst': str, 'titleType': str, 'primaryTitle': str, 'originalTitle': str, 'isAdult': str, 'startYear': str, 'endYear': str, 'runtimeMinutes': str, 'genres': str},
-                      quoting= csv.QUOTE_NONE)
+                      quoting= csv.QUOTE_NONE, # We don't pandas parse quets as escape chacracter.
+                      na_values= ['\\N'] # We want to drop all \Ns.
+                      )
 
     add_title = (
         "INSERT INTO title "
@@ -66,7 +69,8 @@ def insert_data(cursor: mysql.connector.cursor_cext.CMySQLCursor):
     # and I also don't want to keep a variable pointing to temp, to free up memory. 
     genres_prep = create_df(temp, "tconst", "genres") 
     temp = pd.read_csv(os.path.join("..", "data", "title.ratings.csv"), 
-                      dtype={'tconst': str, 'averageRating': float, 'numVotes': str})
+                      dtype={'tconst': str, 'averageRating': float, 'numVotes': str},
+                      )
     update_title = (
       "UPDATE title "
       "SET ratings = %(averageRating)s "
@@ -89,7 +93,9 @@ def insert_data(cursor: mysql.connector.cursor_cext.CMySQLCursor):
     temp = pd.read_csv(os.path.join("..", "data", "name.basics.csv"),
                       dtype=  {'nconst': str, 'primaryName': str, 'birthYear': str, 'deathYear': str, 'primaryProfession': str, 'knownForTitles': str},
                       quoting= csv.QUOTE_NONE,
-                      keep_default_na = False)
+                      keep_default_na = False,
+                      na_values= ['\\N']
+                      )
     add_person = (
         "INSERT INTO person "
         "(temp, name) "
@@ -101,7 +107,9 @@ def insert_data(cursor: mysql.connector.cursor_cext.CMySQLCursor):
 
     # Creating the title_person table.
     temp = pd.read_csv(os.path.join("..", "data", "title.principals.csv"),
-                      dtype={'tconst': str, 'ordering': str, 'nconst': str, 'category': str, 'job': str, 'characters': str})
+                      dtype={'tconst': str, 'ordering': str, 'nconst': str, 'category': str, 'job': str, 'characters': str},
+                      quoting= csv.QUOTE_NONE,
+                      na_values= ['\\N'])
     add_title_person = (
       "INSERT INTO title_person "
       "(temp1, temp2, job) "
