@@ -17,37 +17,16 @@ def query_1():
 
     return query
 
+
 def query_2():
     """
-    Retutns a sql string that searches by a person's name movies where the person was part of production,
-    and a job type he did on this production.
-
-    The table will have five columns,
-    the first contains the id of a person,
-    the second his/her name,
-    the third is an id of a movie where the person was part of production,
-    the fourth is the name of the movie,
-    and the fifth is the type of job the person did on that movie.
-
-    The result will be sorted by ascending person_id first, and will have an inner order dictated by ascending movie_id.
-    """    
-    query =(
-            "SELECT B.id AS person_id, B.name AS person_name, title.id AS movie_id, title.name AS movie_name, B.job "
-            "FROM title JOIN "
-                "("
-                    "SELECT DISTINCT A.id, A.name, title_person.title_id "
-                    "FROM title_person JOIN "
-                        "("
-                            "SELECT person.id, person.name "
-                            "FROM person "
-                            "WHERE MATCH(person.name) AGAINST('%s' IN NATURAL LANGUAGE MODE)"
-                        ") AS A "
-                    "ON title_person.person_id = A.id"
-                ") AS B "
-            "ON title.id = B.title_id "
-            "ORDER BY person_id, movie_id"
-            )
-
+    Retutns a query that searches by movie name, and returns their row in the title table
+    """   
+    query = (
+        "SELECT * "         
+        "FROM title "
+        "WHERE MATCH(name) AGAINST(%s IN NATURAL LANGUAGE MODE)"
+        )
     return query
 
 
@@ -83,8 +62,6 @@ def query_4():
     """
     query =(
             "SELECT B.id, B.name, AVG(title.ratings) AS average_rating "
-            # One could say that we have code duplication here because below there's exactly the same substring we have in query number 3,
-            # however I think this code duplication justifies itself because that make the code more readable.
             "FROM title JOIN "
                 "("
                     "SELECT DISTINCT A.id, A.name, title_person.title_id "
@@ -92,7 +69,7 @@ def query_4():
                         "("
                             "SELECT person.id, person.name "
                             "FROM person "
-                            "WHERE MATCH(person.name) AGAINST('%s' IN NATURAL LANGUAGE MODE)"
+                            "WHERE person.name like %s"
                         ") AS A "
                     "ON title_person.person_id = A.id"
                 ") AS B "
