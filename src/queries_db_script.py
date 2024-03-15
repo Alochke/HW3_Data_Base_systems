@@ -11,7 +11,7 @@ def query_1():
     query= (
         "SELECT genre.genre, title.id, title.name, title.year, title.minutes, title.ratings "
         "FROM genre JOIN title "
-        "ON MATCH(genre.genre) AGAINST(%s IN NATURAL LANGUAGE MODE) AND title.year >= %s AND title.year <= %s "
+        "ON genre.id = title.id AND genre.genre LIKE %s AND title.year >= %s AND title.year <= %s "
         "ORDER BY title.ratings DESC"
         )
 
@@ -66,7 +66,7 @@ def query_3():
                 "("
                     "SELECT id, name "
                     "FROM title "
-                    "WHERE MATCH(name) AGAINST('%s' IN NATURAL LANGUAGE MODE)"
+                    "WHERE MATCH(name) AGAINST(%s IN NATURAL LANGUAGE MODE)"
                 ") AS A JOIN title_person "
             "ON A.id = title_person.title_id "
             "GROUP BY A.id, title_person.job "
@@ -109,11 +109,11 @@ def query_5():
     """
     
     query = (
-        "SELECT profession"
-        "FROM profession JOIN person"
-        "ON profession.id = person.id"
-        "GROUP BY proffesion"
-        "HAVING COUNT(*) > %d"
+        "SELECT profession "
+        "FROM profession JOIN person "
+        "ON profession.id = person.id "
+        "GROUP BY profession "
+        "HAVING COUNT(*) > %s"
     )
 
     return query
