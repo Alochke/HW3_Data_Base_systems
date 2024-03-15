@@ -83,15 +83,7 @@ def insert_data(cursor: mysql.connector.cursor_cext.CMySQLCursor):
     )
     temp.apply(lambda x: exec(x, add_genre), axis=1)
 
-    # Creating the title_person table.
-    temp = pd.read_csv(os.path.join("..", "data", "title.principals.csv"),
-                      dtype={'tconst': str, 'ordering': str, 'nconst': str, 'category': str, 'job': str, 'characters': str})
-    add_title_person = (
-      "INSERT INTO title_person "
-      "(temp1, temp2, job) "
-      "VALUES(%(tconst)s, %(nconst)s, %(category)s)"
-    )
-    temp.apply(lambda x: exec(x, add_title_person), axis = 1)
+
     
     # Creating the person table.
     temp = pd.read_csv(os.path.join("..", "data", "name.basics.csv"),
@@ -103,10 +95,21 @@ def insert_data(cursor: mysql.connector.cursor_cext.CMySQLCursor):
         "(temp, name) "
         "VALUES(%(nconst)s, %(primaryName)s)"
     )
+    # Preparing the profession tables beforehand to minimaize memory usage, we want the garbage collector to work.
+    profession_prep = create_df(temp, "nconst", "primaryProfession") 
     temp.apply(lambda x: exec(x, add_person), axis = 1)
 
+    # Creating the title_person table.
+    temp = pd.read_csv(os.path.join("..", "data", "title.principals.csv"),
+                      dtype={'tconst': str, 'ordering': str, 'nconst': str, 'category': str, 'job': str, 'characters': str})
+    add_title_person = (
+      "INSERT INTO title_person "
+      "(temp1, temp2, job) "
+      "VALUES(%(tconst)s, %(nconst)s, %(category)s)"
+    )
+    temp.apply(lambda x: exec(x, add_title_person), axis = 1)
+
     # Creating the profession table.
-    profession_prep = create_df(temp, "nconst", "primaryProfession") 
     temp = profession_prep
     add_profession = (
       "INSERT INTO profession "
@@ -118,10 +121,6 @@ def insert_data(cursor: mysql.connector.cursor_cext.CMySQLCursor):
 
 
     FIX_TABLES = {}
-    FIX_TABLES['title_person_fix'] = (
-      "ALTER TABLE title_person "
-      "ADD FOREIGN KEY (temp2) REFERENCES person(temp)"
-      )
     FIX_TABLES['profession_fix'] = (
       "DELETE FROM profession "
       "WHERE profession.temp NOT IN ( SELECT title_person.temp2 "
@@ -145,11 +144,6 @@ def insert_data(cursor: mysql.connector.cursor_cext.CMySQLCursor):
       "DROP FOREIGN KEY profession_key,"
       "DROP COLUMN temp"
       )
-    FIX_TABLES['person_alter'] = (
-      "ALTER TABLE person "
-      "DROP FOREIGN KEY person_key,"
-      "DROP COLUMN temp"
-      )
     FIX_TABLES['title_person_update1'] = (
       "UPDATE title_person "
       "SET title_id = ( SELECT title.id "
@@ -167,9 +161,14 @@ def insert_data(cursor: mysql.connector.cursor_cext.CMySQLCursor):
       "ADD PRIMARY KEY (title_id, person_id, job),"
       "ADD FOREIGN KEY (title_id) REFERENCES title(id),"
       "ADD FOREIGN KEY (person_id) REFERENCES person(id),"
-      "DROP FOREIGN KEY title_person_key,"
+      "DROP FOREIGN KEY title_person_person,"
+      "DROP FOREIGN KEY title_person_title,"
       "DROP COLUMN temp1,"
       "DROP COLUMN temp2"
+      )
+    FIX_TABLES['person_alter'] = (
+      "ALTER TABLE person "
+      "DROP COLUMN temp"
       )
     FIX_TABLES['genre_update'] = (
       "UPDATE genre "

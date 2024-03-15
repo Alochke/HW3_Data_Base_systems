@@ -72,8 +72,8 @@ def create_tables(cursor: mysql.connector.cursor_cext.CMySQLCursor):
         f"temp1 char({TCONST_LEN}) NOT NULL,"
         f"temp2 char({NCONST_LEN}) NOT NULL,"
         f"job varchar({MAX_JOB_LEN}) NOT NULL,"
-        "CONSTRAINT FOREIGN KEY (temp1) REFERENCES title(temp)," # We limit the data to persons from the movie industry by this key.
-        "CONSTRAINT FOREIGN KEY (temp2) REFERENCES person(temp)"
+        "CONSTRAINT title_person_title FOREIGN KEY (temp1) REFERENCES title(temp)," # We limit the data to persons from the movie industry by this key.
+        "CONSTRAINT title_person_person  FOREIGN KEY (temp2) REFERENCES person(temp)"
         ") ENGINE=InnoDB"
     ))
     UPDATES.append((
