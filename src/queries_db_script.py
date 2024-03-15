@@ -20,7 +20,7 @@ def query_1():
 
 def query_2():
     """
-    Retutns a query that searches by movie name, and returns their row in the title table
+    Retutns a query that searches by movie name, and returns their id, name, year, duration in minutes and average imdb ratings
     """   
     query = (
         "SELECT * "         
@@ -56,7 +56,7 @@ def query_3():
 
 def query_4():
     """
-    Get for a person the average rating of average imdb movie ratings where the person was part of the production, by the person's name.
+    Get for a person's name, the id and name of the person, and the average of average imdb movie ratings where the person was part of the production.
 
     The result will be sorted by descending average of averages.
     """
@@ -82,9 +82,8 @@ def query_4():
 
 def query_5():
     """
-    Returns a query that gets all industry professions having amount of people working in them greater than the number given.
+    Returns a query that gets all industry professions having an amount of people working in them greater than the given number.
     """
-    
     query = (
         "SELECT profession "
         "FROM profession JOIN person "
