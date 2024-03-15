@@ -2,6 +2,7 @@ import pandas as pd
 import csv
 import os
 import mysql
+from create_db_script import execute
 
 def create_df(base: pd.DataFrame, id: str, array: str) -> pd.DataFrame:
     """
@@ -42,6 +43,29 @@ def create_df(base: pd.DataFrame, id: str, array: str) -> pd.DataFrame:
     return pd.DataFrame({id: ids, array: subs})
 
 def insert_data(cursor: mysql.connector.cursor_cext.CMySQLCursor):
+    """
+    Execute SQL commands to insert data into the database tables.
+
+    Parameters:
+        cursor (mysql.connector.cursor_cext.CMySQLCursor): The MySQL cursor object used for executing SQL commands.
+
+    Returns:
+        None
+
+    Raises:
+        None
+
+    Notes:
+        This function populates the database tables with data extracted from CSV files.
+        It reads data from multiple CSV files, performs necessary data transformations, and inserts the data into respective tables.
+        Various SQL commands are executed to insert data, update tables, and perform necessary fixes to ensure data consistency.
+
+    Example:
+        cursor = mysql_connection.cursor()
+        insert_data(cursor)
+    """
+    
+    
     # This function executes the given sql command on the db, and it fills it correctly based on values from x, a df row.
     # We'll use it when going over the rows of a df and execute sql commands that are based on the rows.
     def exec(x: pd.core.series.Series, sql_str: str):
@@ -198,10 +222,4 @@ def insert_data(cursor: mysql.connector.cursor_cext.CMySQLCursor):
       "DROP COLUMN adult"
       )
     
-    for fix in FIX_TABLES:
-      table_description = FIX_TABLES[fix]
-      try:
-          cursor.execute(table_description)
-      except mysql.connector.Error as err:
-          print(err.msg)
-          print(fix)
+    execute(cursor, FIX_TABLES.values())
