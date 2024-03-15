@@ -64,9 +64,9 @@ def insert_data(cursor: mysql.connector.cursor_cext.CMySQLCursor):
         "VALUES(%(tconst)s, %(titleType)s, %(primaryTitle)s, %(isAdult)s, %(startYear)s, %(runtimeMinutes)s)"
     )
     temp.apply(lambda x: exec(x, add_title), axis = 1)
-    # I intentionally prepare the df I need for the genres column beforehand, 
-    # because I don't want to call pd.read_csv more times than necessary, it's a heavy operation
-    # and I also don't want to keep a variable pointing to temp, to free up memory. 
+    # We intentionally prepare the df we need for the genres column beforehand, 
+    # because we don't want to call pd.read_csv more times than necessary, it's a heavy operation
+    # and we also don't want to keep a variable pointing to temp, to free up memory. 
     genres_prep = create_df(temp, "tconst", "genres") 
     temp = pd.read_csv(os.path.join("..", "data", "title.ratings.csv"), 
                       dtype={'tconst': str, 'averageRating': float, 'numVotes': str},
