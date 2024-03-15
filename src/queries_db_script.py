@@ -3,7 +3,7 @@
 def query_1():
     """
     Retruns a query that gets a genre and two year numbers,
-    and returns a table that has movie's genre, movie ids, movie name, years, duration in minutes and average imdb ratings columns (in that order)
+    and returns a table that has movie genres, movie ids, movie name, years, duration in minutes and average imdb ratings columns (in that order)
     that contains only the information of titles of the given genre that started the production between the given years.
     The result will be sorted by descending average rating.
     """
@@ -20,12 +20,12 @@ def query_1():
 def query_2():
     """
     Retutns a sql string that searches by a person's name movies where the person was part of production,
-    and a job type he did on this poruction.
+    and a job type he did on this production.
 
     The table will have five columns,
     the first contains the id of a person,
     the second his/her name,
-    the third is a id of a movie where the person was part of production,
+    the third is an id of a movie where the person was part of production,
     the fourth is the name of the movie,
     and the fifth is the type of job the person did on that movie.
 
