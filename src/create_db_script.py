@@ -27,12 +27,6 @@ def create_tables(cursor: mysql.connector.cursor_cext.CMySQLCursor):
     # therefore we use the original IDs only as temporaries and let the db generate new shorter keys,
     # we need to preserve the temporaries until spreading the new IDs across all tables to preserve
     # consistency across all tables.
-    # We also use them to filter unused data, by utilizing foreign keys.
-    # For example, the original dataset contains data about video game directors unassociated with the movie
-    # industry, we get rid of those by making a person's tempory id be a foreign key refrencing tempory IDs
-    # of persons appearing in the title_person table, we know for sure that only IDs of persons associated with
-    # the movies industry can appear there because its rows were filtered priorly by making sure the tempory
-    # title_id of those rows appear in the title table, via a foreign key constraint.
     UPDATES.append((
         "CREATE TABLE title("
         f"id MEDIUMINT({TITLE_ID_LEN}) UNSIGNED NOT NULL AUTO_INCREMENT UNIQUE,"
@@ -65,9 +59,11 @@ def create_tables(cursor: mysql.connector.cursor_cext.CMySQLCursor):
         f"id MEDIUMINT({PERSON_ID_LEN}) UNSIGNED NOT NULL AUTO_INCREMENT UNIQUE,"
         f"temp char({NCONST_LEN}) NOT NULL,"
         f"name varchar({MAX_PERSON_NAME_LEN}) NOT NULL,"
-        "PRIMARY KEY (id),"
-        "CONSTRAINT person_key FOREIGN KEY (temp) REFERENCES title_person(temp2)" # We limit the data to persons from the movie industry by this key.
+        "PRIMARY KEY (id)"
         ") ENGINE=InnoDB"
+    ))
+    UPDATES.append((
+        "CREATE INDEX temp2 ON person(temp)" # We have add this index for the next table creation to work properly.
     ))
     UPDATES.append((
         "CREATE TABLE title_person("
@@ -76,11 +72,9 @@ def create_tables(cursor: mysql.connector.cursor_cext.CMySQLCursor):
         f"temp1 char({TCONST_LEN}) NOT NULL,"
         f"temp2 char({NCONST_LEN}) NOT NULL,"
         f"job varchar({MAX_JOB_LEN}) NOT NULL,"
-        "CONSTRAINT title_person_key FOREIGN KEY (temp1) REFERENCES title(temp)" # We limit the data to persons from the movie industry by this key.
+        "CONSTRAINT FOREIGN KEY (temp1) REFERENCES title(temp)," # We limit the data to persons from the movie industry by this key.
+        "CONSTRAINT FOREIGN KEY (temp2) REFERENCES person(temp)"
         ") ENGINE=InnoDB"
-    ))
-    UPDATES.append((
-        "CREATE INDEX temp ON title_person(temp2)" # We have to add this index for the next table creation to work, we'll remove it after data insertion.
     ))
     UPDATES.append((
         "CREATE TABLE profession("
@@ -109,4 +103,3 @@ def create_tables(cursor: mysql.connector.cursor_cext.CMySQLCursor):
         except mysql.connector.Error as err:
             print(err.msg)
             print(sql_str)
-
