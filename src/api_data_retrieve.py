@@ -115,70 +115,86 @@ def insert_data(cursor: mysql.connector.cursor_cext.CMySQLCursor):
     )
     temp.apply(lambda x: exec(x, add_profession), axis = 1)
   
-  FIX_TABLES = {}
-  FIX_TABLES['profession_update'] = (
-     "UPDATE profession "
-     "SET id = ( SELECT person.id "
-                    "FROM person "
-                    "WHERE profession.temp = person.temp )"
-    )
-  FIX_TABLES['profession_alter'] = (
-        "ALTER TABLE profession "
-        "ADD PRIMARY KEY (id, profession),"
-        "ADD FOREIGN KEY (id) REFERENCES person(id),"
-        "DROP FOREIGN KEY profession_key,"
-        "DROP COLUMN temp"
-        )
-  FIX_TABLES['person_alter'] = (
-     "ALTER TABLE person "
-     "DROP FOREIGN KEY person_key,"
-     "DROP COLUMN temp"
-    )
-  FIX_TABLES['title_person_update1'] = (
-     "UPDATE title_person "
-     "SET title_id = ( SELECT title.id "
+
+
+    FIX_TABLES = {}
+    FIX_TABLES['title_person_fix'] = (
+      "ALTER TABLE title_person "
+      "ADD FOREIGN KEY (temp2) REFERENCES person(temp)"
+      )
+    FIX_TABLES['profession_fix'] = (
+      "DELETE FROM profession "
+      "WHERE profession.temp NOT IN ( SELECT title_person.temp2 "
+                                      "FROM title_person )"
+      )
+    FIX_TABLES['person_fix'] = (
+      "DELETE FROM person "
+      "WHERE person.temp NOT IN ( SELECT title_person.temp2 "
+                                  "FROM title_person )"
+      )
+    FIX_TABLES['profession_update'] = (
+      "UPDATE profession "
+      "SET id = ( SELECT person.id "
+                  "FROM person "
+                  "WHERE profession.temp = person.temp )"
+      )
+    FIX_TABLES['profession_alter'] = (
+      "ALTER TABLE profession "
+      "ADD PRIMARY KEY (id, profession),"
+      "ADD FOREIGN KEY (id) REFERENCES person(id),"
+      "DROP FOREIGN KEY profession_key,"
+      "DROP COLUMN temp"
+      )
+    FIX_TABLES['person_alter'] = (
+      "ALTER TABLE person "
+      "DROP FOREIGN KEY person_key,"
+      "DROP COLUMN temp"
+      )
+    FIX_TABLES['title_person_update1'] = (
+      "UPDATE title_person "
+      "SET title_id = ( SELECT title.id "
                         "FROM title "
                         "WHERE title_person.temp1 = title.temp )"
-                        )
-  FIX_TABLES['title_person_update2'] = (
-     "UPDATE title_person "
-     "SET person_id = ( SELECT person.id "
+      )
+    FIX_TABLES['title_person_update2'] = (
+      "UPDATE title_person "
+      "SET person_id = ( SELECT person.id "
                         "FROM person "
-                        "WHERE title_person.temp2 = person.id )"
-                        )
-  FIX_TABLES['title_person_alter'] = (
-        "ALTER TABLE title_person "
-        "ADD PRIMARY KEY (title_id, person_id, job),"
-        "ADD FOREIGN KEY (title_id) REFERENCES title(id),"
-        "ADD FOREIGN KEY (person_id) REFERENCES person(id),"
-        "DROP FOREIGN KEY title_person_key,"
-        "DROP COLUMN temp1,"
-        "DROP COLUMN temp2"
-        )
-  FIX_TABLES['genre_update'] = (
-     "UPDATE genre "
-     "SET id = ( SELECT title.id "
-     "FROM title "
-     "WHERE genre.temp = title.temp )"
-     )
-  FIX_TABLES['genre_alter'] = (
-     "ALTER TABLE genre "
-     "ADD PRIMARY KEY (id, genre),"
-     "ADD FOREIGN KEY (id) REFERENCES title(id),"
-     "DROP FOREIGN KEY genre_key,"
-     "DROP COLUMN temp"
-     )
-  FIX_TABLES['title_alter'] = (
-     "ALTER TABLE title "
-     "DROP COLUMN temp,"
-     "DROP COLUMN type,"
-     "DROP COLUMN adult"
-     )
-  
-  for fix in FIX_TABLES:
-    table_description = FIX_TABLES[fix]
-    try:
-        cursor.execute(table_description)
-    except mysql.connector.Error as err:
-        print(err.msg)
-        print(fix)
+                        "WHERE title_person.temp2 = person.temp )"
+      )
+    FIX_TABLES['title_person_alter'] = (
+      "ALTER TABLE title_person "
+      "ADD PRIMARY KEY (title_id, person_id, job),"
+      "ADD FOREIGN KEY (title_id) REFERENCES title(id),"
+      "ADD FOREIGN KEY (person_id) REFERENCES person(id),"
+      "DROP FOREIGN KEY title_person_key,"
+      "DROP COLUMN temp1,"
+      "DROP COLUMN temp2"
+      )
+    FIX_TABLES['genre_update'] = (
+      "UPDATE genre "
+      "SET id = ( SELECT title.id "
+      "FROM title "
+      "WHERE genre.temp = title.temp )"
+      )
+    FIX_TABLES['genre_alter'] = (
+      "ALTER TABLE genre "
+      "ADD PRIMARY KEY (id, genre),"
+      "ADD FOREIGN KEY (id) REFERENCES title(id),"
+      "DROP FOREIGN KEY genre_key,"
+      "DROP COLUMN temp"
+      )
+    FIX_TABLES['title_alter'] = (
+      "ALTER TABLE title "
+      "DROP COLUMN temp,"
+      "DROP COLUMN type,"
+      "DROP COLUMN adult"
+      )
+    
+    for fix in FIX_TABLES:
+      table_description = FIX_TABLES[fix]
+      try:
+          cursor.execute(table_description)
+      except mysql.connector.Error as err:
+          print(err.msg)
+          print(fix)
