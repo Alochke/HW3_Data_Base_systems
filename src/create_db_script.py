@@ -86,7 +86,7 @@ def create_tables(cursor: mysql.connector.cursor_cext.CMySQLCursor) -> None:
         f"type CHAR({MOVIE_LEN}) NOT NULL,"
         f"name VARCHAR({MAX_MOVIE_NAME_LEN}) NOT NULL,"
         "adult BOOL NOT NULL,"
-        "year SMALLINT({YEAR_LEN}) UNSIGNED NOT NULL," # We use the smallint type and not a year type because a year type has a lower bound of 1901, while there are movies that were produced before 1901.
+        f"year SMALLINT({YEAR_LEN}) UNSIGNED NOT NULL," # We use the smallint type and not a year type because a year type has a lower bound of 1901, while there are movies that were produced before 1901.
         f"minutes SMALLINT({MAX_MINUTES_LEN}) UNSIGNED NOT NULL,"
         "ratings FLOAT({RATING_PRECISION}) DEFAULT 0 NOT NULL,"
         "PRIMARY KEY (id),"
