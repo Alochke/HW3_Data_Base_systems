@@ -1,0 +1,1 @@
+The python version this project was developed for is python 3.12.0.
