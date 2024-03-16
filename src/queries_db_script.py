@@ -20,7 +20,7 @@ def query_1():
 
 def query_2():
     """
-    Returns a full-text query by movie name, that returns the matching rows in the title table.
+    Returns a full-text query by movie name, and returns the matching rows in the title table.
     """   
     query = (
         "SELECT * "         
@@ -47,7 +47,7 @@ def query_3():
                     "SELECT id, name "
                     "FROM title "
                     "WHERE MATCH(name) AGAINST(%s IN NATURAL LANGUAGE MODE)"
-                ") AS A JOIN title_person "
+                ") AS A JOIN title_person"
             "ON A.id = title_person.title_id "
             "GROUP BY A.id, title_person.job "
             "ORDER BY A.id"
