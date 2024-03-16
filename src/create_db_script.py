@@ -1,4 +1,5 @@
 import mysql.connector
+from collections.abc import Iterable
 
 TCONST_LEN = 10
 NCONST_LEN = 10
@@ -15,11 +16,59 @@ PERSON_ID_LEN = 7
 YEAR_LEN = 4
 RATING_PRECISION = 2
 
-
-
-def create_tables(cursor: mysql.connector.cursor_cext.CMySQLCursor):
+def execute(cursor: mysql.connector.cursor_cext.CMySQLCursor ,iter: Iterable) -> None:
     """
-    This function creates the db.
+    A refactoring function for executing the commands found in an iterable.
+
+    Parameters:
+        cursor (mysql.connector.cursor_cext.CMySQLCursor): The MySQL cursor object used for executing SQL commands.
+        iter (Iterable): An iterable containing SQL commands to be executed.
+
+    Returns:
+        None
+
+    Raises:
+        None
+
+    Notes:
+        This function iterates through each SQL command in the provided iterable and executes it using the given cursor.
+        If any error occurs during execution, it catches the `mysql.connector.Error` exception and prints the error message.
+
+    Example:
+        cursor = mysql_connection.cursor()
+        sql_commands = ["INSERT INTO table1 (column1) VALUES ('value1')",
+                        "UPDATE table2 SET column2 = 'new_value' WHERE condition",
+                        "DELETE FROM table3 WHERE condition"]
+        execute(cursor, sql_commands)
+    """    
+    for sql_str in iter:
+        try:
+            cursor.execute(sql_str)
+        except mysql.connector.Error as err:
+            print(err.msg)
+
+def create_tables(cursor: mysql.connector.cursor_cext.CMySQLCursor) -> None:
+    """
+    Create tables in the database using the provided MySQL cursor.
+
+    Parameters:
+        cursor (mysql.connector.cursor_cext.CMySQLCursor): The MySQL cursor object used for executing SQL commands.
+
+    Returns:
+        None
+
+    Raises:
+        None
+
+    Notes:
+        This function creates tables in the database based on predefined schema specifications.
+        It creates tables for storing movie titles, genres, persons, title-person relationships, and professions.
+        Additional columns are temporarily added to tables to accommodate original IDs before being replaced with new shorter keys.
+        Indexes and constraints are applied to ensure data integrity and optimize query performance.
+
+    Example:
+        cursor = mysql_connection.cursor()
+        create_tables(cursor)
     """
     UPDATES = [] # This list accumulates the sql commands we'll use.
     
@@ -99,8 +148,4 @@ def create_tables(cursor: mysql.connector.cursor_cext.CMySQLCursor):
         "ALTER TABLE person ADD FULLTEXT(name)"
     ))
     
-    for sql_str in UPDATES:
-        try:
-            cursor.execute(sql_str)
-        except mysql.connector.Error as err:
-            print(err.msg)
+    execute(cursor, UPDATES)

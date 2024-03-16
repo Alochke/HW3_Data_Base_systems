@@ -1,9 +1,9 @@
 
-# search movie by multiple parameters
 def query_1():
     """
-    Retruns a query that gets a genre and two year numbers,
-    and returns a table that has movie genres, movie ids, movie name, years, duration in minutes and average imdb ratings columns (in that order)
+    Returns a query that gets a genre and two year numbers,
+    and returns a table that has movie genres, movie ids, movie names, the years in which production started, 
+    duration in minutes and average imdb ratings (If no ratings were given the rating will be 0.) columns (in that order)
     that contains only the information of titles of the given genre that started the production between the given years.
     The result will be sorted by descending average rating.
     """
@@ -20,7 +20,7 @@ def query_1():
 
 def query_2():
     """
-    Retutns a query that searches by movie name, and returns their row in the title table
+    Returns a full-text query by movie name, and returns the matching rows in the title table.
     """   
     query = (
         "SELECT * "         
@@ -32,12 +32,13 @@ def query_2():
 
 def query_3():
     """
-    Returns a query that searches by movie name, and returns a table where the first column contains the ids of the movies,
-    the second their names,
-    a type of job in this movie
-    and how many people did this job.
+    Returns a full-text query by movie name, that returns a table where the first column contains the ids of the movies,
+    the second, their names,
+    the third, a type of job in this movie's production,
+    and the fourth, how many people did this job.
+    If no data was gathered about a person doing a job on a production then there won't be a row for the film + job combination in the table.
 
-    The result will be sorted by ascending person_id movie_id.
+    The result will be sorted by ascending movie_id.
     """
     query = (
             "SELECT A.id, A.name, title_person.job, COUNT(*) AS num_of_people "
@@ -46,7 +47,7 @@ def query_3():
                     "SELECT id, name "
                     "FROM title "
                     "WHERE MATCH(name) AGAINST(%s IN NATURAL LANGUAGE MODE)"
-                ") AS A JOIN title_person "
+                ") AS A JOIN title_person"
             "ON A.id = title_person.title_id "
             "GROUP BY A.id, title_person.job "
             "ORDER BY A.id"
@@ -56,9 +57,13 @@ def query_3():
 
 def query_4():
     """
-    Get for a person the average rating of average imdb movie ratings where the person was part of the production, by the person's name.
+    Returns a query that gets for a person the average rating of average imdb movie ratings where the person was part of the production,
+    by the person's name.
+    (Movies with no rating will be counted as having their average rating equal to zero.)
 
     The result will be sorted by descending average of averages.
+
+    The query uses like to search by the person's name so we can use % to search for substrings.
     """
     query =(
             "SELECT B.id, B.name, AVG(title.ratings) AS average_rating "
@@ -82,7 +87,7 @@ def query_4():
 
 def query_5():
     """
-    Returns a query that gets all industry professions having amount of people working in them greater than the number given.
+    Returns a query that gets all industry professions having the amount of people working in them greater than the number given.
     """
     
     query = (
